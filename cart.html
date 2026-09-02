@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart – PlantPalace</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main>
+        <div class="page-hero">
+            <div class="container">
+                <h1>Your Shopping Cart</h1>
+                <p id="heroCartCount"></p>
+            </div>
+        </div>
+
+        <section class="section" style="padding-top: clamp(30px, 5vw, 50px);">
+            <div class="container">
+                <!-- Empty state -->
+                <div class="empty-cart" id="emptyCart" style="display:none;">
+                    <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                    <h3>Your cart is empty</h3>
+                    <p>Looks like you haven't added any plants to your cart yet.</p>
+                    <a href="catalog.html" class="btn-primary btn-lg">Browse Plants</a>
+                </div>
+
+                <!-- Cart content -->
+                <div id="cartContent" class="row g-4" style="display:none;">
+                    <div class="col-lg-8 col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 style="margin:0;font-size:1.25rem;">Items in Cart</h3>
+                            <button onclick="clearCart()" style="background:none;border:none;color:#e53935;cursor:pointer;font-size:0.9rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+                                <i class="fas fa-trash" aria-hidden="true"></i>Clear All
+                            </button>
+                        </div>
+                        <div id="cartItems"></div>
+                        <div class="mt-3 mb-4">
+                            <a href="catalog.html" style="display:inline-flex;align-items:center;gap:8px;color:var(--primary);font-weight:600;text-decoration:none;font-size:0.95rem;">
+                                <i class="fas fa-arrow-left" aria-hidden="true"></i> Continue Shopping
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-12">
+                        <div class="cart-summary">
+                            <h4>Order Summary</h4>
+                            <div class="summary-row"><span id="itemCountLabel">0 items</span><span id="cartSubtotal">$0.00</span></div>
+                            <div class="summary-row"><span>Estimated Shipping</span><span id="cartShipping">$0.00</span></div>
+                            <div class="summary-row"><span>Tax (7%)</span><span id="cartTax">$0.00</span></div>
+                            <div class="summary-row total"><strong>Total</strong><strong id="cartTotal" style="color:var(--primary);">$0.00</strong></div>
+
+                            <form class="promo-box" onsubmit="applyPromo(event)">
+                                <input type="text" id="promoCode" placeholder="Promo code" aria-label="Promo code">
+                                <button type="submit" class="btn-outline-primary" style="white-space:nowrap;">Apply</button>
+                            </form>
+
+                            <button class="btn-primary w-100" style="padding:13px;font-size:1.05rem;margin-top:8px;" onclick="checkout()">
+                                <i class="fas fa-lock me-2" aria-hidden="true"></i>Proceed to Checkout
+                            </button>
+
+                            <div style="display:flex;align-items:center;gap:10px;margin-top:16px;">
+                                <input type="checkbox" id="termsCheck" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;">
+                                <label for="termsCheck" style="font-size:0.84rem;color:var(--text-light);cursor:pointer;margin-bottom:0;">
+                                    I agree to the <a href="javascript:void(0)" onclick="showToast('PlantPalace terms apply.')" style="color:var(--primary);text-decoration:underline;">terms and conditions</a>
+                                </label>
+                            </div>
+
+                            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #f0f0f0;">
+                                <i class="fas fa-shield-alt" style="color:#9e9e9e;font-size:0.9rem;" aria-hidden="true"></i>
+                                <span style="font-size:0.8rem;color:#757575;">Secure 256-bit SSL encrypted checkout</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="plants-data.js"></script>
+    <script>
+        document.getElementById('navbar-placeholder').innerHTML = buildNavbar('cart');
+        document.getElementById('footer-placeholder').innerHTML = buildFooter();
+
+        function renderCart() {
+            const cart = getCart();
+            const emptyEl = document.getElementById('emptyCart');
+            const contentEl = document.getElementById('cartContent');
+            const heroCount = document.getElementById('heroCartCount');
+
+            if (cart.length === 0) {
+                emptyEl.style.display = 'block';
+                contentEl.style.display = 'none';
+                heroCount.textContent = 'Your cart is currently empty';
+                updateNavCartCount();
+                return;
+            }
+
+            emptyEl.style.display = 'none';
+            contentEl.style.display = 'flex';
+
+            const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
+            heroCount.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''} in your cart`;
+            document.getElementById('itemCountLabel').textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+
+            const container = document.getElementById('cartItems');
+            container.innerHTML = '';
+            cart.forEach(item => {
+                const itemTotal = (item.price * item.quantity).toFixed(2);
+                container.innerHTML += `
+                <div class="cart-item-row">
+                    <img class="cart-item-img" src="${item.image}" alt="${item.name}" loading="lazy">
+                    <div class="cart-item-info">
+                        <h4>${item.name}</h4>
+                        <p class="price">$${item.price.toFixed(2)} each</p>
+                    </div>
+                    <div class="cart-item-controls-wrap">
+                        <div class="qty-controls" aria-label="Quantity for ${item.name}">
+                            <button class="qty-btn" onclick="changeItemQty(${item.id}, -1)" aria-label="Decrease quantity">−</button>
+                            <input class="qty-num" type="number" value="${item.quantity}" min="1" onchange="setItemQty(${item.id}, this.value)" aria-label="Item quantity">
+                            <button class="qty-btn" onclick="changeItemQty(${item.id}, 1)" aria-label="Increase quantity">+</button>
+                        </div>
+                        <div class="cart-item-total">$${itemTotal}</div>
+                        <button class="remove-btn" onclick="removeItem(${item.id})" title="Remove item" aria-label="Remove ${item.name}">
+                            <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            // Totals calculation
+            const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+            const shipping = subtotal > 0 ? 12.99 : 0;
+            const tax = subtotal * 0.07;
+            document.getElementById('cartSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('cartShipping').textContent = `$${shipping.toFixed(2)}`;
+            document.getElementById('cartTax').textContent = `$${tax.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `$${(subtotal + shipping + tax).toFixed(2)}`;
+            updateNavCartCount();
+        }
+
+        function changeItemQty(id, delta) {
+            const cart = getCart();
+            const item = cart.find(i => i.id === id);
+            if (!item) return;
+            item.quantity += delta;
+            if (item.quantity < 1) {
+                saveCart(cart.filter(i => i.id !== id));
+            } else {
+                saveCart(cart);
+            }
+            renderCart();
+        }
+
+        function setItemQty(id, val) {
+            const qty = parseInt(val, 10);
+            if (isNaN(qty) || qty < 1) {
+                renderCart();
+                return;
+            }
+            const cart = getCart();
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.quantity = qty;
+                saveCart(cart);
+                renderCart();
+            }
+        }
+
+        function removeItem(id) {
+            const cart = getCart();
+            const plant = plants.find(p => p.id === id);
+            const plantName = plant ? plant.name : 'Item';
+            saveCart(cart.filter(i => i.id !== id));
+            showToast(`${plantName} removed from cart`);
+            renderCart();
+        }
+
+        function clearCart() {
+            if (confirm('Are you sure you want to clear your entire cart?')) {
+                saveCart([]);
+                showToast('Cart cleared');
+                renderCart();
+            }
+        }
+
+        function applyPromo(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('promoCode');
+            const code = input.value.trim();
+            if (!code) return;
+            showToast('Promo code applied: 10% discount coming soon! 🎁');
+            input.value = '';
+        }
+
+        function checkout() {
+            const cart = getCart();
+            if (cart.length === 0) {
+                alert('Your cart is empty! Add some plants to proceed.');
+                return;
+            }
+            if (!document.getElementById('termsCheck').checked) {
+                alert('Please agree to the terms and conditions to proceed with checkout.');
+                return;
+            }
+            showToast('Redirecting to secure checkout... 🛒');
+            setTimeout(() => {
+                alert('Checkout successful! Thank you for supporting Plant Palace.');
+                saveCart([]);
+                renderCart();
+            }, 1000);
+        }
+
+        renderCart();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

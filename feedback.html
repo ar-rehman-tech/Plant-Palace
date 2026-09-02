@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback – PlantPalace</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main>
+        <div class="page-hero hero-feedback">
+            <div class="container">
+                <h1>Share Your Feedback</h1>
+                <p>Your opinion helps us grow — just like our plants 🌱</p>
+            </div>
+        </div>
+
+        <section class="section">
+            <div class="container">
+                <div class="feedback-card" id="feedbackFormCard">
+                    <h3 style="margin-bottom:6px;font-size:clamp(1.35rem, 3vw, 1.6rem);">How was your experience?</h3>
+                    <p style="color:var(--text-light);margin-bottom:26px;font-size:0.92rem;">We read every piece of feedback and use it to improve our service.</p>
+
+                    <form id="feedbackForm" onsubmit="submitFeedback(event)">
+                        <div class="mb-3">
+                            <label class="form-label" for="fbName">Your Name *</label>
+                            <input type="text" class="form-control" id="fbName" placeholder="Jane Doe" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="fbEmail">Email Address *</label>
+                            <input type="email" class="form-control" id="fbEmail" placeholder="jane@example.com" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Overall Rating *</label>
+                            <div class="star-rating" role="radiogroup" aria-label="Overall Rating">
+                                <input type="radio" name="rating" id="s5" value="5"><label for="s5" title="5 stars" aria-label="5 stars">★</label>
+                                <input type="radio" name="rating" id="s4" value="4"><label for="s4" title="4 stars" aria-label="4 stars">★</label>
+                                <input type="radio" name="rating" id="s3" value="3"><label for="s3" title="3 stars" aria-label="3 stars">★</label>
+                                <input type="radio" name="rating" id="s2" value="2"><label for="s2" title="2 stars" aria-label="2 stars">★</label>
+                                <input type="radio" name="rating" id="s1" value="1"><label for="s1" title="1 star" aria-label="1 star">★</label>
+                            </div>
+                            <p style="font-size:0.8rem;color:var(--text-light);margin-top:4px;margin-bottom:0;">Select a star rating</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Feedback Category</label>
+                            <div class="category-pills" role="radiogroup" aria-label="Feedback Category">
+                                <input type="radio" name="cat" id="c1" class="cat-check" value="Website Experience" checked>
+                                <label for="c1" class="cat-label">🌐 Website Experience</label>
+
+                                <input type="radio" name="cat" id="c2" class="cat-check" value="Product Quality">
+                                <label for="c2" class="cat-label">🌿 Product Quality</label>
+
+                                <input type="radio" name="cat" id="c3" class="cat-check" value="Delivery Service">
+                                <label for="c3" class="cat-label">🚚 Delivery Service</label>
+
+                                <input type="radio" name="cat" id="c4" class="cat-check" value="Customer Support">
+                                <label for="c4" class="cat-label">💬 Customer Support</label>
+
+                                <input type="radio" name="cat" id="c5" class="cat-check" value="Other">
+                                <label for="c5" class="cat-label">✨ Other</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" for="fbMessage">Your Feedback *</label>
+                            <textarea class="form-control" id="fbMessage" rows="5" placeholder="Tell us what you think — compliments, suggestions, or concerns..." required></textarea>
+                        </div>
+
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+                            <input type="checkbox" id="newsletter" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);">
+                            <label for="newsletter" style="cursor:pointer;font-size:0.88rem;color:var(--text-light);margin-bottom:0;">
+                                Subscribe to our newsletter for plant care tips and exclusive discounts
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn-primary w-100" style="padding:13px;font-size:1.05rem;">
+                            <i class="fas fa-paper-plane me-2" aria-hidden="true"></i>Submit Feedback
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Success Banner -->
+                <div class="success-banner" id="successBanner" role="alert">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    <h3>Thank You for Your Feedback!</h3>
+                    <p style="opacity:0.92;margin-bottom:22px;max-width:520px;margin-left:auto;margin-right:auto;">We genuinely appreciate your input. It helps us continually improve PlantPalace for plant lovers everywhere.</p>
+                    <a href="catalog.html" class="btn-white">Continue Shopping →</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="plants-data.js"></script>
+    <script>
+        document.getElementById('navbar-placeholder').innerHTML = buildNavbar('feedback');
+        document.getElementById('footer-placeholder').innerHTML = buildFooter();
+
+        function submitFeedback(e) {
+            if (e) e.preventDefault();
+            const name = document.getElementById('fbName').value.trim();
+            const email = document.getElementById('fbEmail').value.trim();
+            const msg = document.getElementById('fbMessage').value.trim();
+            const rating = document.querySelector('input[name="rating"]:checked');
+            if (!name || !email || !msg) {
+                alert('Please fill in your name, email, and message.');
+                return;
+            }
+            if (!rating) {
+                alert('Please select a star rating.');
+                return;
+            }
+            document.getElementById('feedbackFormCard').style.display = 'none';
+            document.getElementById('successBanner').style.display = 'block';
+            showToast('Feedback submitted! Thank you 🌱');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

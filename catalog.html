@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Catalog – PlantPalace</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <main>
+        <!-- Catalog Hero -->
+        <div class="catalog-hero">
+            <div class="container">
+                <h1>Our Plant Collection</h1>
+                <p>Browse all our hand-picked plants. Filter by category, sort by price, or search by name.</p>
+            </div>
+        </div>
+
+        <!-- Catalog Section -->
+        <section class="section" style="padding-top: clamp(30px, 5vw, 50px);">
+            <div class="container">
+                <!-- Filter Bar -->
+                <div class="filter-section">
+                    <div class="row align-items-center g-3">
+                        <div class="col-lg-5 col-md-6 col-12">
+                            <div style="position:relative;">
+                                <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9e9e9e;" aria-hidden="true"></i>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search plants by name..." style="padding-left:40px;" oninput="filterPlants()" aria-label="Search plants">
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-3 col-6">
+                            <select class="form-select" id="filterSelect" onchange="syncCategoryFromSelect()" aria-label="Filter by Category">
+                                <option value="all">All Categories</option>
+                                <option value="indoor">Indoor Plants</option>
+                                <option value="outdoor">Outdoor Plants</option>
+                                <option value="succulent">Succulents</option>
+                                <option value="flowering">Flowering Plants</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-6">
+                            <select class="form-select" id="sortSelect" onchange="sortAndRender()" aria-label="Sort Plants">
+                                <option value="default">Sort by</option>
+                                <option value="price-low">Price: Low → High</option>
+                                <option value="price-high">Price: High → Low</option>
+                                <option value="name">Name: A–Z</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Pills -->
+                <div class="cat-pills" role="tablist" aria-label="Plant Categories">
+                    <button class="cat-pill active" data-cat="all" onclick="setCat('all', this)">🌿 All</button>
+                    <button class="cat-pill" data-cat="indoor" onclick="setCat('indoor', this)">🏠 Indoor</button>
+                    <button class="cat-pill" data-cat="outdoor" onclick="setCat('outdoor', this)">🌳 Outdoor</button>
+                    <button class="cat-pill" data-cat="succulent" onclick="setCat('succulent', this)">🌵 Succulents</button>
+                    <button class="cat-pill" data-cat="flowering" onclick="setCat('flowering', this)">🌸 Flowering</button>
+                </div>
+
+                <!-- Plant Grid -->
+                <div class="row g-4" id="plantCatalog"></div>
+                <div id="noResults" style="display:none;text-align:center;color:var(--text-light);padding:50px 20px;">
+                    <i class="fas fa-search" style="font-size:2.5rem;color:#ccc;margin-bottom:14px;display:block;" aria-hidden="true"></i>
+                    <h4>No plants found matching your criteria</h4>
+                    <p style="margin-top:6px;">Try adjusting your search terms or filter category.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="detailModal" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="modalName">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeDetailModal()" aria-label="Close modal"><i class="fas fa-times" aria-hidden="true"></i></button>
+            <div class="modal-inner">
+                <img id="modalImg" src="" alt="Selected plant detail" class="modal-img" loading="lazy">
+                <div class="modal-info">
+                    <span class="badge-category" id="modalCat"></span>
+                    <h2 id="modalName" style="font-size:clamp(1.4rem, 3vw, 1.75rem);margin-bottom:6px;"></h2>
+                    <p class="detail-price" id="modalPrice"></p>
+                    <p id="modalDesc" style="font-size:0.92rem;color:var(--text-light);margin-bottom:14px;line-height:1.65;"></p>
+                    <div class="care-info">
+                        <h4><i class="fas fa-leaf me-2" aria-hidden="true"></i>Care Instructions</h4>
+                        <p id="modalCare" style="font-size:0.88rem;margin-top:6px;line-height:1.55;margin-bottom:0;"></p>
+                    </div>
+                    <p id="modalOrigin" style="font-size:0.84rem;color:var(--text-light);margin-top:10px;margin-bottom:0;"></p>
+                    <div class="modal-actions-row">
+                        <div class="qty-controls" aria-label="Quantity Controls">
+                            <button class="qty-btn" onclick="changeQty(-1)" aria-label="Decrease quantity">−</button>
+                            <input class="qty-input" type="number" id="modalQty" value="1" min="1" aria-label="Plant Quantity">
+                            <button class="qty-btn" onclick="changeQty(1)" aria-label="Increase quantity">+</button>
+                        </div>
+                        <button class="btn-primary flex-grow-1" id="modalAddBtn" onclick="addFromModal()">
+                            <i class="fas fa-cart-plus me-2" aria-hidden="true"></i>Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+
+    <script src="plants-data.js"></script>
+    <script>
+        document.getElementById('navbar-placeholder').innerHTML = buildNavbar('catalog');
+        document.getElementById('footer-placeholder').innerHTML = buildFooter();
+
+        let currentDetailId = null;
+        let filteredPlants = [...plants];
+
+        function renderPlants(list) {
+            const container = document.getElementById('plantCatalog');
+            const noRes = document.getElementById('noResults');
+            container.innerHTML = '';
+            if (list.length === 0) {
+                noRes.style.display = 'block';
+                return;
+            }
+            noRes.style.display = 'none';
+            const cart = getCart();
+            list.forEach(p => {
+                const inCart = cart.find(i => i.id === p.id);
+                container.innerHTML += `
+                <div class="col-lg-4 col-md-6 col-12 plant-item" data-category="${p.category}" data-id="${p.id}">
+                    <div class="plant-card animate-up">
+                        <div class="plant-img" style="cursor:pointer;" onclick="openDetail(${p.id})">
+                            <img src="${p.image}" alt="${p.name}" loading="lazy">
+                        </div>
+                        <div class="plant-info">
+                            <span class="badge-category">${p.category}</span>
+                            <h3 class="plant-title">${p.name}</h3>
+                            <p class="plant-price">$${p.price.toFixed(2)}</p>
+                            <p class="plant-meta">${p.origin}</p>
+                            <div class="plant-actions">
+                                <button class="btn-outline-primary" onclick="openDetail(${p.id})">Details</button>
+                                <button class="btn-primary position-relative" onclick="handleCardAddToCart(${p.id})">
+                                    Add to Cart
+                                    <span class="cart-quantity-badge" id="badge-${p.id}" style="display:${inCart ? 'flex' : 'none'}">${inCart ? inCart.quantity : 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function filterPlants() {
+            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            const cat = document.getElementById('filterSelect').value;
+            filteredPlants = plants.filter(p =>
+                p.name.toLowerCase().includes(q) &&
+                (cat === 'all' || p.category === cat)
+            );
+            sortAndRender();
+        }
+
+        function sortAndRender() {
+            const sort = document.getElementById('sortSelect').value;
+            let sorted = [...filteredPlants];
+            if (sort === 'price-low') sorted.sort((a,b) => a.price - b.price);
+            else if (sort === 'price-high') sorted.sort((a,b) => b.price - a.price);
+            else if (sort === 'name') sorted.sort((a,b) => a.name.localeCompare(b.name));
+            renderPlants(sorted);
+        }
+
+        function setCat(cat, btn) {
+            document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            else {
+                const targetPill = document.querySelector(`.cat-pill[data-cat="${cat}"]`);
+                if (targetPill) targetPill.classList.add('active');
+            }
+            document.getElementById('filterSelect').value = cat;
+            filterPlants();
+        }
+
+        function syncCategoryFromSelect() {
+            const cat = document.getElementById('filterSelect').value;
+            document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+            const targetPill = document.querySelector(`.cat-pill[data-cat="${cat}"]`);
+            if (targetPill) targetPill.classList.add('active');
+            filterPlants();
+        }
+
+        function openDetail(id) {
+            const p = plants.find(pl => pl.id === id);
+            if (!p) return;
+            currentDetailId = id;
+            const modalImg = document.getElementById('modalImg');
+            modalImg.src = p.image;
+            modalImg.alt = p.name;
+            document.getElementById('modalName').textContent = p.name;
+            document.getElementById('modalPrice').textContent = `$${p.price.toFixed(2)}`;
+            document.getElementById('modalDesc').textContent = p.description;
+            document.getElementById('modalCare').textContent = p.care;
+            document.getElementById('modalCat').textContent = p.category;
+            document.getElementById('modalOrigin').textContent = `📍 Origin: ${p.origin}`;
+            document.getElementById('modalQty').value = 1;
+            document.getElementById('detailModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            if (modal) modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function closeModal(e) {
+            if (e.target === document.getElementById('detailModal')) closeDetailModal();
+        }
+
+        function changeQty(delta) {
+            const input = document.getElementById('modalQty');
+            const val = Math.max(1, (parseInt(input.value) || 1) + delta);
+            input.value = val;
+        }
+
+        function addFromModal() {
+            if (currentDetailId === null) return;
+            const qty = parseInt(document.getElementById('modalQty').value) || 1;
+            addToCart(currentDetailId, qty);
+            updateBadges();
+        }
+
+        function handleCardAddToCart(id) {
+            addToCart(id, 1);
+            updateBadges();
+        }
+
+        function updateBadges() {
+            const cart = getCart();
+            plants.forEach(p => {
+                const badge = document.getElementById(`badge-${p.id}`);
+                if (!badge) return;
+                const item = cart.find(i => i.id === p.id);
+                if (item && item.quantity > 0) {
+                    badge.textContent = item.quantity;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+
+        // Handle URL params (?cat=indoor, ?detail=0)
+        const params = new URLSearchParams(window.location.search);
+        const catParam = params.get('cat');
+        if (catParam) {
+            setCat(catParam);
+        } else {
+            filterPlants();
+        }
+
+        const detailParam = params.get('detail');
+        if (detailParam !== null) {
+            const plantId = parseInt(detailParam, 10);
+            if (!isNaN(plantId)) {
+                setTimeout(() => openDetail(plantId), 150);
+            }
+        }
+
+        updateBadges();
+
+        // Keyboard close
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeDetailModal();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
